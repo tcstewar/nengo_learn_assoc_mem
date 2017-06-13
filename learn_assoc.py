@@ -39,19 +39,29 @@ class LearningAssocMem(nengo.Network):
             self.output = nengo.Node(None, size_in=dimensions)
             self.correct = nengo.Node(None, size_in=dimensions)
 
+            if voja_rate > 0:
+                learning_rule_type = nengo.Voja(post_tau=voja_tau,
+                                                learning_rate=voja_rate)
+            else:
+                learning_rule_type = None
             nengo.Connection(self.input, self.mem,
-                learning_rule_type=nengo.Voja(post_tau=voja_tau,
-                                              learning_rate=voja_rate))
+                             learning_rule_type=learning_rule_type)
 
+
+            if pes_rate > 0:
+                learning_rule_type = nengo.PES(learning_rate=pes_rate)
+            else:
+                learning_rule_type = None
 
             self.conn_out = nengo.Connection(self.mem.neurons, self.output,
                 transform=decoders,
-                learning_rule_type=nengo.PES(learning_rate=pes_rate),
+                learning_rule_type=learning_rule_type,
                 )
 
-            nengo.Connection(self.output, self.conn_out.learning_rule)
-            nengo.Connection(self.correct, self.conn_out.learning_rule,
-                             transform=-1)
+            if pes_rate > 0:
+                nengo.Connection(self.output, self.conn_out.learning_rule)
+                nengo.Connection(self.correct, self.conn_out.learning_rule,
+                                 transform=-1)
 
             nengo.Connection(self.mem.neurons, self.mem.neurons,
                 transform=inhibit_strength*(np.eye(self.mem.n_neurons)-1),
