@@ -12,6 +12,7 @@ class LearningAssocMem(nengo.Network):
                  label=None,
                  inhibit_synapse=0.01,
                  inhibit_strength=0.0005,
+                 seed=None,
                  load_from=None
                  ):
         super(LearningAssocMem, self).__init__(label=label)
@@ -19,14 +20,20 @@ class LearningAssocMem(nengo.Network):
             data = np.load(load_from)
             encoders = data['enc']
             decoders = data['dec']
+            if seed is None:
+                seed = int(data['seed'])
         else:
             encoders = nengo.Default
             decoders = np.zeros((dimensions, n_neurons), dtype=float)
+
+        self.seed = seed
+
         with self:
             self.mem = nengo.Ensemble(n_neurons=n_neurons,
                                       dimensions=dimensions,
                                       intercepts=intercepts,
                                       encoders=encoders,
+                                      seed=seed,
                                       )
             self.input = nengo.Node(None, size_in=dimensions)
             self.output = nengo.Node(None, size_in=dimensions)
@@ -60,5 +67,5 @@ class LearningAssocMem(nengo.Network):
     def save(self, filename, sim):
         enc = sim.data[self.probe_encoder][-1]
         dec = sim.data[self.probe_decoder][-1]
-        np.savez(filename, enc=enc, dec=dec)
+        np.savez(filename, enc=enc, dec=dec, seed=self.seed)
 

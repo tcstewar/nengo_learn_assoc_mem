@@ -26,13 +26,20 @@ class LearningAssocMemTrial(pytry.NengoTrial):
         self.param('filename for saving/loading', filename='weights.npz')
         self.param('load weights at beginning', load=False)
         self.param('save weights at end', save=False)
+        self.param('input similarity', input_similarity=0.0)
 
     def model(self, p):
         self.items = list(range(p.n_items))*p.n_present
         random.shuffle(self.items)
+        vocab = spa.Vocabulary(p.dimensions)
+
+        base = vocab.create_pointer()
+        for i in range(p.n_items):
+            v = vocab.create_pointer() + p.input_similarity * base
+            v.normalize()
+            vocab.add('X%d' % i, v)
 
         vocab_items = ['X%d' % i for i in self.items]
-        vocab = spa.Vocabulary(p.dimensions)
 
         model = nengo.Network()
         with model:
@@ -62,6 +69,7 @@ class LearningAssocMemTrial(pytry.NengoTrial):
                     inhibit_synapse=p.inhibit_synapse,
                     inhibit_strength=p.inhibit_strength,
                     load_from = None if not p.load else p.filename,
+                    seed=p.seed,
                     )
             if p.save:
                 self.mem.create_weight_probes()
@@ -70,6 +78,15 @@ class LearningAssocMemTrial(pytry.NengoTrial):
 
             self.p_output = nengo.Probe(self.mem.output, synapse=0.01)
             self.p_ideal = nengo.Probe(correct, synapse=0.01)
+
+            if p.gui:
+                display = spa.State(p.dimensions, vocab=vocab)
+                nengo.Connection(self.mem.output, display.input)
+                for ens in display.all_ensembles:
+                    ens.neuron_type = nengo.Direct()
+
+                mem = self.mem
+                self.locals = locals()
 
         return model
 
