@@ -4,10 +4,8 @@ import nengo.spa as spa
 import numpy as np
 import random
 
-import sys
-if '.' not in sys.path:
-    sys.path.append('.')
-import learn_assoc
+
+import nengo_learn_assoc_mem
 
 class LearningAssocMemTrial(pytry.NengoTrial):
     def params(self):
@@ -22,7 +20,7 @@ class LearningAssocMemTrial(pytry.NengoTrial):
         self.param('presentation time', t_present=0.1)
         self.param('number of items', n_items=6)
         self.param('number of presentations per item', n_present=4)
-        self.param('lower scale on input values', input_scale=0.5)
+        self.param('lower scale on input values', input_scale=1.0)
         self.param('filename for saving/loading', filename='weights.npz')
         self.param('load weights at beginning', load=False)
         self.param('save weights at end', save=False)
@@ -59,7 +57,7 @@ class LearningAssocMemTrial(pytry.NengoTrial):
                 return vocab.parse('%g * %s' % (scale, vocab_items[index])).v
             correct = nengo.Node(correct_func)
 
-            self.mem = learn_assoc.LearningAssocMem(
+            self.mem = nengo_learn_assoc_mem.LearningAssocMem(
                     n_neurons=p.n_neurons,
                     dimensions=p.dimensions,
                     intercepts=nengo.dists.Uniform(p.intercept, p.intercept),
@@ -115,6 +113,9 @@ class LearningAssocMemTrial(pytry.NengoTrial):
             plt.plot(scores.T, alpha=0.3)
             plt.plot(np.mean(scores, axis=0))
 
+        return dict(
+            score = np.mean(scores, axis=0),
+            )
 
 
 
